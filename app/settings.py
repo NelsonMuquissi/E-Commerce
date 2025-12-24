@@ -7,15 +7,23 @@ from dotenv import load_dotenv
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
+
+MODE = os.getenv("MODE", "DEVELOPMENT").strip().upper()
+
+
 # Define o modo de execução da aplicação
-MODE = os.getenv('MODE')
+def env_bool(name: str, default: bool = False) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes", "y", "on")
+
+DEBUG = env_bool("DEBUG", False)
+
 
 # Constrói o caminho base do projeto, usado para definir caminhos relativos
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Segurança e configuração básica
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
-DEBUG = os.getenv('DEBUG', 'False')
+
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
@@ -39,6 +47,10 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'rest_framework',
     'core',
+    "catalog",
+    "cart",
+    "orders",
+    "payments",
 ]
 
 MIDDLEWARE = [
@@ -100,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Configurações de internacionalização
 LANGUAGE_CODE = 'pt-br'
-TIME_ZONE = 'America/Sao_Paulo'
+TIME_ZONE = 'Africa/Luanda'
 USE_I18N = True
 USE_TZ = True
 
@@ -113,30 +125,30 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 FILE_UPLOAD_PERMISSIONS = 0o640
 
 # Configurações específicas para desenvolvimento, migração e produção
-if MODE == 'DEVELOPMENT':
-    MY_IP = os.getenv('MY_IP', '127.0.0.1')
-    MEDIA_URL = f'http://{MY_IP}:19003/media/'
+if MODE == "DEVELOPMENT":
+    MY_IP = os.getenv("MY_IP", "127.0.0.1")
+    MEDIA_URL = f"http://{MY_IP}:19003/media/"
 else:
-    MEDIA_URL = '/media/'
-    CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    MEDIA_URL = "/media/"
+    CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
+    if not CLOUDINARY_URL:
+        raise RuntimeError("CLOUDINARY_URL não definido para MODE != DEVELOPMENT")
+
+    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
     STORAGES = {
-        'default': {
-            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
-        },
-        'staticfiles': {
-            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-        },
+        "default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
+
+
 
 # Tipo padrão de campo para chaves primárias
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações do DRF e drf-spectacular (OpenAPI/Swagger)
 SPECTACULAR_SETTINGS = {
-    'TITLE': '<PROJETO> API',
-    'DESCRIPTION': 'API para o projeto <descreva aqui seu projeto>.',
-    'VERSION': '1.0.0',
+    "TITLE": "E-commerce API",
+    "VERSION": "1.0.0",
 }
 
 # Modelo de usuário personalizado
@@ -144,16 +156,24 @@ AUTH_USER_MODEL = 'core.User'
 
 # Configurações do Django REST Framework
 REST_FRAMEWORK = {
-    # "DEFAULT_AUTHENTICATION_CLASSES": ("core.authentication.TokenAuthentication",),
-    # "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly",),
-    'DEFAULT_PAGINATION_CLASS': 'app.pagination.CustomPagination',
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'PAGE_SIZE': 10,
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ),
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ),
+    "DEFAULT_PAGINATION_CLASS": "app.pagination.CustomPagination",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "PAGE_SIZE": 10,
 }
+
 
 # Configurações do Passage (Autenticação)
 PASSAGE_APP_ID = os.getenv('PASSAGE_APP_ID', 'app_id')
 PASSAGE_API_KEY = os.getenv('PASSAGE_API_KEY', 'api_key')
 
 # Exibe as configurações principais para verificação
-print(f'{MODE = } \n{MEDIA_URL = } \n{DATABASES = }')
+#print(f'{MODE = } \n{MEDIA_URL = } \n{DATABASES = }')
