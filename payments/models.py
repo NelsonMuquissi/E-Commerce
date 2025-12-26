@@ -22,3 +22,19 @@ class Payment(models.Model):
     raw_last_callback = models.JSONField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PaymentEvent(models.Model):
+    provider = models.CharField(max_length=50, default="prontu")
+    order_id = models.CharField(max_length=80, blank=True)
+    prontu_transaction_id = models.CharField(max_length=80, blank=True)
+    status = models.CharField(max_length=30, blank=True)
+    operation = models.CharField(max_length=30, blank=True)
+    payload = models.JSONField()
+    received_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["provider", "prontu_transaction_id"]),
+            models.Index(fields=["order_id"]),
+        ]

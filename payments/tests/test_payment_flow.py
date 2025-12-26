@@ -1,28 +1,29 @@
+import os
+import json
 import pytest
-from django.contrib.auth import get_user_model
-from catalog.models import Category, Product
-from cart.models import Cart, CartItem
-from orders.services import create_order_from_cart
-from payments.services import create_payment, confirm_payment
+from django.urls import reverse
 from orders.models import Order
-
+from payments.models import Payment
 
 @pytest.mark.django_db
-def test_confirm_payment_marks_order_paid():
-    User = get_user_model()
-    user = User.objects.create_user(email="d@d.com", password="123456")
+def test_prontu_webhook_marks_order_paid(client, user):
+    order = Order.objects.create(user=user, status=Order.Status.CREATED, total=1000)
+    Payment.objects.create(order=order, provider="prontu", status=Payment.Status.PENDING)
 
-    cat = Category.objects.create(name="Tech4", slug="tech4")
-    p = Product.objects.create(category=cat, name="Headset", slug="headset", price="30.00", stock=3, is_active=True)
+    secret = os.getenv("PRONTU_CALLBACK_SECRET", "testsecret")
+    url = f"/api/webhooks/prontu/{secret}/"
 
-    cart = Cart.objects.create(user=user, is_active=True)
-    CartItem.objects.create(cart=cart, product=p, quantity=1)
+    payload = {
+        "result": {
+            "operation": "receive",
+            "status": "accepted",
+            "reference_id": str(order.id),
+            "prontu_transaction_id": "tx_001",
+        }
+    }
 
-    order = create_order_from_cart(user)
-    assert order.status == Order.Status.CREATED
-
-    payment = create_payment(user, order.id, provider="manual")
-    confirm_payment(payment.id)
+    resp = client.post(url, data=json.dumps(payload), content_type="application/json")
+    assert resp.status_code == 200
 
     order.refresh_from_db()
     assert order.status == Order.Status.PAID

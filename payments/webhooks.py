@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 
+from payments.models import PaymentEvent
 from payments.models import Payment
 from orders.models import Order
 
@@ -28,6 +29,15 @@ def prontu_general_callback(request, secret: str):
     status_ = result.get("status")
     reference_id = result.get("reference_id")
     prontu_tx_id = result.get("prontu_transaction_id")
+
+    PaymentEvent.objects.create(
+    provider="prontu",
+    order_id=str(reference_id or ""),
+    prontu_transaction_id=str(prontu_tx_id or ""),
+    status=str(status_ or ""),
+    operation=str(operation or ""),
+    payload=payload,
+    )
 
     # Só processa operações de pagamento
     if operation not in ("receive", "reference"):

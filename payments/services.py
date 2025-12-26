@@ -19,10 +19,14 @@ def create_payment(user, order_id: int, provider: str = "manual") -> Payment:
 
 @transaction.atomic
 def confirm_payment(payment_id: int) -> Payment:
-    payment = Payment.objects.select_for_update().select_related("order").get(id=payment_id)
+    #payment = Payment.objects.select_for_update().select_related("order").get(id=payment_id)
+    payment, _ = Payment.objects.get_or_create(order=order)
+
+    #if payment.status == Payment.Status.SUCCESS:
+       # return payment  # idempotente
 
     if payment.status == Payment.Status.SUCCESS:
-        return payment  # idempotente
+        raise ValueError("Este pedido já está pago.")
 
     payment.status = Payment.Status.SUCCESS
     payment.reference = payment.reference or f"CONF-{payment.id}"

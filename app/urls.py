@@ -14,6 +14,7 @@ from payments.views import PaymentAdminActionsViewSet
 from core.views import UserViewSet
 from catalog.views import CategoryViewSet, ProductViewSet 
 from payments.webhooks import prontu_general_callback
+from django.http import JsonResponse
 
 router = DefaultRouter()
 
@@ -32,8 +33,13 @@ router.register(r"my-orders", MyOrderPaymentViewSet, basename="my-order-pay")
 router.register(r"payments", PaymentAdminActionsViewSet, basename="payments")
 
 
+
+def health(request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("", health),
 
     # OpenAPI 3
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

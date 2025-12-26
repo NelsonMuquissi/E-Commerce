@@ -20,6 +20,9 @@ def start_prontu_payment(user, order_id: int, *, return_url: str = "", cancel_ur
     payment.status = Payment.Status.PENDING
     payment.save()
 
+    if payment.status == Payment.Status.SUCCESS:
+        raise ValueError("Este pedido já está pago.")
+
     client = ProntuClient()
     token = client.get_token()
 
