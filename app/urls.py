@@ -7,9 +7,13 @@ from drf_spectacular.views import (
 )
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
+from cart.views import MyCartViewSet
+from orders.views import MyOrdersViewSet
+from payments.views import MyOrderPaymentViewSet, PaymentAdminActionsViewSet
+from payments.views import PaymentAdminActionsViewSet
 from core.views import UserViewSet
-from catalog.views import CategoryViewSet, ProductViewSet  # <-- ADICIONE
+from catalog.views import CategoryViewSet, ProductViewSet 
+from payments.webhooks import prontu_general_callback
 
 router = DefaultRouter()
 
@@ -18,6 +22,15 @@ router.register(r'usuarios', UserViewSet, basename='usuarios')
 # E-commerce (catalog)
 router.register(r'categories', CategoryViewSet, basename='categories')
 router.register(r'products', ProductViewSet, basename='products')
+
+router.register(r"my-cart", MyCartViewSet, basename="my-cart")
+router.register(r"my-orders", MyOrdersViewSet, basename="my-orders")
+
+
+#router.register(r"my-orders", MyOrdersViewSet, basename="my-orders")  # já existe
+router.register(r"my-orders", MyOrderPaymentViewSet, basename="my-order-pay")
+router.register(r"payments", PaymentAdminActionsViewSet, basename="payments")
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,9 +43,7 @@ urlpatterns = [
         name='swagger-ui',
     ),
     path(
-        'api/redoc/',
-        SpectacularRedocView.as_view(url_name='schema'),
-        name='redoc',
+        'api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc',
     ),
 
     # Auth JWT
@@ -41,4 +52,6 @@ urlpatterns = [
 
     # API
     path('api/', include(router.urls)),
+
+    path("api/webhooks/prontu/<str:secret>/", prontu_general_callback),
 ]
